@@ -7,7 +7,7 @@ services:
     region: oregon  # or singapore, frankfurt, ohio
     plan: free  # or starter ($7/mo), standard ($25/mo)
     buildCommand: npm run build
-    startCommand: npm start
+    startCommand: node ./dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
