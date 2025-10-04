@@ -8,11 +8,12 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc && npx prisma generate",
     "start": "node dist/server.js",
-    "render-build": "npm ci && npx prisma generate && npm run build && npx prisma migrate deploy",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate deploy"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -41,7 +42,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
-    "@types/axios": "^0.9.36",
     "@types/passport-jwt": "^4.0.1",
     "@types/winston": "^2.4.4",
     "@upstash/redis": "^1.35.4",

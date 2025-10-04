@@ -1,7 +1,7 @@
 import prisma from '../../config/database.js';
 import pythonBackend from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
-import type { LanguageDetectionResponse } from '../../services/python-backend.service.js';
+import type { LanguageDetectionResponse } from '../../types/python-backend.types.js';
 
 class TranslationService {
   async translate(
@@ -26,7 +26,15 @@ class TranslationService {
     // Call Python backend
     const result = await pythonBackend.translate(text, sourceLang, targetLang);
 
-    const translatedText = result.translated_text;
+    // Extract translated text with fallbacks
+    const translatedText = result.translated_text || 
+                          result.translation || 
+                          result.text || 
+                          '';
+
+    if (!translatedText) {
+      throw new Error('Translation failed: No translated text returned');
+    }
 
     // Save to database
     await prisma.translation.create({
@@ -34,9 +42,9 @@ class TranslationService {
         userId,
         sourceText: text,
         translatedText,
-        sourceLang: result.source_language || sourceLang,
-        targetLang: result.target_language || targetLang,
-        metadata: {},
+        sourceLang,
+        targetLang,
+        metadata: result.metadata || {},
       },
     });
 
@@ -52,9 +60,14 @@ class TranslationService {
     };
   }
 
-  async detectLanguage(text: string): Promise<LanguageDetectionResponse> {
+  async detectLanguage(text: string) {
     const result = await pythonBackend.detectLanguage(text);
-    return result;
+    
+    return {
+      language: result.language || result.detected_language || 'unknown',
+      confidence: result.confidence,
+      metadata: result.metadata,
+    };
   }
 
   async getUserTranslations(userId: string) {

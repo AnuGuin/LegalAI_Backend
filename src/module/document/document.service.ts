@@ -1,6 +1,7 @@
 import prisma from '../../config/database.js';
 import pythonBackend from '../../services/python-backend.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
+import type { DocumentGenerationResponse } from '../../types/python-backend.types.js';
 
 class DocumentService {
   async generateDocument(
@@ -18,7 +19,7 @@ class DocumentService {
         title: result.title || `Document ${new Date().toISOString()}`,
         content: result.content || '',
         format,
-        fileUrl: result.file_url || result.url,
+        fileUrl: result.file_url || result.url || result.download_url || result.document || '',
         prompt,
         generatedBy: 'legal-ai-python-backend',
         metadata: result.metadata || {},
@@ -27,7 +28,7 @@ class DocumentService {
 
     return {
       document,
-      downloadUrl: result.file_url || result.url,
+      downloadUrl: result.file_url || result.url || result.download_url || result.document || '',
     };
   }
 
