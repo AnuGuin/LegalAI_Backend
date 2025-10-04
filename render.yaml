@@ -6,8 +6,8 @@ services:
     runtime: node
     region: oregon  # or singapore, frankfurt, ohio
     plan: free  # or starter ($7/mo), standard ($25/mo)
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npm start
+    buildCommand: npm run render-build
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production

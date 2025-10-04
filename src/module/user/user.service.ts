@@ -79,7 +79,7 @@ class UserService {
     }
 
     // Delete user and related data (using cascade delete or manual cleanup)
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx) => {
       // Delete related data first
       await tx.conversation.deleteMany({ where: { userId } });
       await tx.document.deleteMany({ where: { userId } });

@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc && npx prisma generate",
     "start": "node dist/server.js",
-    "render-build": "npm ci && npm run build && npx prisma migrate deploy",
+    "render-build": "npm ci && npx prisma generate && npm run build && npx prisma migrate deploy",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",

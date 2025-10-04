@@ -1,6 +1,7 @@
 import app from './app.js';
 import { logger } from './utils/logger.js';
 import prisma from './config/database.js';
+import { execSync } from 'child_process';
 
 const PORT = process.env.PORT || 10000;
 
@@ -10,7 +11,6 @@ async function startServer() {
     logger.info('✅ Database connected');
 
     if (process.env.NODE_ENV === 'production') {
-      const { execSync } = require('child_process');
       try {
         logger.info('🔄 Running database migrations...');
         execSync('npx prisma migrate deploy', { stdio: 'inherit' });

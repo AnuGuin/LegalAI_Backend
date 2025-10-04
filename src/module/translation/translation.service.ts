@@ -1,6 +1,7 @@
 import prisma from '../../config/database.js';
 import pythonBackend from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
+import type { LanguageDetectionResponse } from '../../services/python-backend.service.js';
 
 class TranslationService {
   async translate(
@@ -25,7 +26,7 @@ class TranslationService {
     // Call Python backend
     const result = await pythonBackend.translate(text, sourceLang, targetLang);
 
-    const translatedText = result.translated_text || result.translation || result.text;
+    const translatedText = result.translated_text;
 
     // Save to database
     await prisma.translation.create({
@@ -33,9 +34,9 @@ class TranslationService {
         userId,
         sourceText: text,
         translatedText,
-        sourceLang,
-        targetLang,
-        metadata: result.metadata || {},
+        sourceLang: result.source_language || sourceLang,
+        targetLang: result.target_language || targetLang,
+        metadata: {},
       },
     });
 
@@ -51,7 +52,7 @@ class TranslationService {
     };
   }
 
-  async detectLanguage(text: string) {
+  async detectLanguage(text: string): Promise<LanguageDetectionResponse> {
     const result = await pythonBackend.detectLanguage(text);
     return result;
   }

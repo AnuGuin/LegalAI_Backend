@@ -157,7 +157,7 @@ class ChatService {
       data: {
         conversationId,
         role: 'ASSISTANT',
-        content: aiResponse.response || aiResponse.message || aiResponse.text || aiResponse.answer,
+        content: aiResponse.response || aiResponse.message || aiResponse.text || aiResponse.answer || 'No response received',
         metadata: {
           ...aiResponse.metadata,
           document_id: conversation.documentId || aiResponse.document_id,

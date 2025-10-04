@@ -21,7 +21,7 @@ interface RAGResponse extends BaseAIResponse {
   document_id?: string;
 }
 
-interface LanguageDetectionResponse {
+export interface LanguageDetectionResponse {
   language: string;
   confidence: number;
 }
