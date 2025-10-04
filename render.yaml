@@ -6,8 +6,8 @@ services:
     runtime: node
     region: oregon  # or singapore, frankfurt, ohio
     plan: free  # or starter ($7/mo), standard ($25/mo)
-    buildCommand: npm run build
-    startCommand: node ./dist/server.js
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -41,4 +41,3 @@ databases:
     user: legalai_user
     plan: free  
     region: oregon
-

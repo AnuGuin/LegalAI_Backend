@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && npx prisma generate",
+    "build": "tsc && tsc-alias && npx prisma generate",
     "start": "node dist/server.js",
+    "postinstall": "npx prisma generate",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy"
   },
@@ -37,6 +38,7 @@
     "nodemon": "^3.1.10",
     "prisma": "^6.16.3",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
