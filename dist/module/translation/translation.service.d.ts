@@ -15,7 +15,7 @@ declare class TranslationService {
         id: string;
         createdAt: Date;
         userId: string;
-        metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         sourceText: string;
         translatedText: string;
         sourceLang: string;

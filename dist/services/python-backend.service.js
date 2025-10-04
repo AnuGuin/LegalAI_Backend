@@ -1,9 +1,10 @@
 import axios from 'axios';
 import FormData from 'form-data';
 class PythonBackendService {
+    client;
     constructor() {
         this.client = axios.create({
-            baseURL: process.env.PYTHON_BACKEND_URL,
+            baseURL: process.env.PYTHON_BACKEND_URL || 'http://localhost:8000',
             timeout: parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '30000'),
             headers: {
                 'Content-Type': 'application/json',

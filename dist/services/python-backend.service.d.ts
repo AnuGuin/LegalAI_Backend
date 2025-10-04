@@ -1,4 +1,4 @@
-import { DocumentGenerationResponse, ChatResponse, AgentChatResponse, RAGChatResponse, TranslationResponse, LanguageDetectionResponse } from '../types/python-backend.types';
+import type { DocumentGenerationResponse, ChatResponse, AgentChatResponse, RAGChatResponse, TranslationResponse, LanguageDetectionResponse } from '../types/python-backend.types.js';
 declare class PythonBackendService {
     private client;
     constructor();

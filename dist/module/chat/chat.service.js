@@ -9,8 +9,8 @@ class ChatService {
                 userId,
                 title,
                 mode,
-                documentId,
-                documentName,
+                documentId: documentId || null,
+                documentName: documentName || null,
             },
         });
         return conversation;

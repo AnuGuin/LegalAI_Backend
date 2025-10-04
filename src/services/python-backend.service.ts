@@ -1,13 +1,13 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import FormData from 'form-data';
-import {
+import type {
   DocumentGenerationResponse,
   ChatResponse,
   AgentChatResponse,
   RAGChatResponse,
   TranslationResponse,
   LanguageDetectionResponse,
-} from '@/types/python-backend.types';
+} from '../types/python-backend.types.js';
 
 
 class PythonBackendService {
@@ -15,7 +15,7 @@ class PythonBackendService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.PYTHON_BACKEND_URL,
+      baseURL: process.env.PYTHON_BACKEND_URL || 'http://localhost:8000',
       timeout: parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '30000'),
       headers: {
         'Content-Type': 'application/json',

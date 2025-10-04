@@ -4,6 +4,9 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
  * Custom application error class
  */
 export class AppError extends Error {
+    statusCode;
+    isOperational;
+    code;
     constructor(message, statusCode = 500, code) {
         super(message);
         this.statusCode = statusCode;

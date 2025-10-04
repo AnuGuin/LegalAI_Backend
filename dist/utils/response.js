@@ -23,6 +23,7 @@ export const HTTP_STATUS = {
 };
 // Response builder class
 export class ResponseBuilder {
+    response;
     constructor() {
         this.response = {
             success: true,

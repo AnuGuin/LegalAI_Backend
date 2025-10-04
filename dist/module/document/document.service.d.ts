@@ -7,7 +7,7 @@ declare class DocumentService {
             format: string;
             userId: string;
             title: string;
-            metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             content: string;
             fileUrl: string | null;
             prompt: string | null;
@@ -29,7 +29,7 @@ declare class DocumentService {
         format: string;
         userId: string;
         title: string;
-        metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         content: string;
         fileUrl: string | null;
         prompt: string | null;

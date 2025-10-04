@@ -35,11 +35,12 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
 }, async (accessToken, refreshToken, profile, done) => {
     try {
+        const email = profile.emails?.[0]?.value;
         let user = await prisma.user.findFirst({
             where: {
                 OR: [
                     { providerId: profile.id, provider: 'GOOGLE' },
-                    { email: profile.emails?.[0]?.value },
+                    ...(email ? [{ email }] : []),
                 ],
             },
         });
@@ -48,7 +49,7 @@ passport.use(new GoogleStrategy({
                 data: {
                     email: profile.emails?.[0]?.value || '',
                     name: profile.displayName,
-                    avatar: profile.photos?.[0]?.value,
+                    avatar: profile.photos?.[0]?.value || null,
                     provider: 'GOOGLE',
                     providerId: profile.id,
                 },
@@ -61,7 +62,7 @@ passport.use(new GoogleStrategy({
                 data: {
                     provider: 'GOOGLE',
                     providerId: profile.id,
-                    avatar: profile.photos?.[0]?.value,
+                    avatar: profile.photos?.[0]?.value || null,
                 },
             });
         }
@@ -79,11 +80,12 @@ passport.use(new FacebookStrategy({
     profileFields: ['id', 'emails', 'name', 'picture'],
 }, async (accessToken, refreshToken, profile, done) => {
     try {
+        const email = profile.emails?.[0]?.value;
         let user = await prisma.user.findFirst({
             where: {
                 OR: [
                     { providerId: profile.id, provider: 'META' },
-                    { email: profile.emails?.[0]?.value },
+                    ...(email ? [{ email }] : []),
                 ],
             },
         });
@@ -92,7 +94,7 @@ passport.use(new FacebookStrategy({
                 data: {
                     email: profile.emails?.[0]?.value || '',
                     name: `${profile.name?.givenName} ${profile.name?.familyName}`,
-                    avatar: profile.photos?.[0]?.value,
+                    avatar: profile.photos?.[0]?.value || null,
                     provider: 'META',
                     providerId: profile.id,
                 },

@@ -5,11 +5,11 @@ declare class ChatService {
         updatedAt: Date;
         userId: string;
         title: string;
-        mode: import(".prisma/client").$Enums.ChatMode;
+        mode: import("@prisma/client").$Enums.ChatMode;
         documentId: string | null;
         documentName: string | null;
         language: string | null;
-        metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         lastMessageAt: Date;
     }>;
     sendMessage(userId: string, conversationId: string, message: string, mode: 'NORMAL' | 'AGENTIC', file?: {
@@ -19,8 +19,8 @@ declare class ChatService {
         userMessage: {
             id: string;
             createdAt: Date;
-            metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
-            role: import(".prisma/client").$Enums.MessageRole;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            role: import("@prisma/client").$Enums.MessageRole;
             content: string;
             tokens: number | null;
             model: string | null;
@@ -30,8 +30,8 @@ declare class ChatService {
         assistantMessage: {
             id: string;
             createdAt: Date;
-            metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
-            role: import(".prisma/client").$Enums.MessageRole;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            role: import("@prisma/client").$Enums.MessageRole;
             content: string;
             tokens: number | null;
             model: string | null;
@@ -45,8 +45,8 @@ declare class ChatService {
         messages: {
             id: string;
             createdAt: Date;
-            metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
-            role: import(".prisma/client").$Enums.MessageRole;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            role: import("@prisma/client").$Enums.MessageRole;
             content: string;
             tokens: number | null;
             model: string | null;
@@ -59,11 +59,11 @@ declare class ChatService {
         updatedAt: Date;
         userId: string;
         title: string;
-        mode: import(".prisma/client").$Enums.ChatMode;
+        mode: import("@prisma/client").$Enums.ChatMode;
         documentId: string | null;
         documentName: string | null;
         language: string | null;
-        metadata: import("@prisma/client/runtime/library.js").JsonValue | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         lastMessageAt: Date;
     }>;
     deleteConversation(userId: string, conversationId: string): Promise<void>;
@@ -71,7 +71,7 @@ declare class ChatService {
         id: string;
         createdAt: Date;
         title: string;
-        mode: import(".prisma/client").$Enums.ChatMode;
+        mode: import("@prisma/client").$Enums.ChatMode;
         documentId: string | null;
         documentName: string | null;
     }>;

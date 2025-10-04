@@ -9,7 +9,7 @@ declare class UserService {
         email: string;
         name: string | null;
         avatar: string | null;
-        preferences: import("@prisma/client/runtime/library.js").JsonValue;
+        preferences: import("@prisma/client/runtime/library").JsonValue;
     }>;
     getUserStats(userId: string): Promise<{
         conversations: number;
