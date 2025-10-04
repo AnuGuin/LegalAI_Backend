@@ -37,4 +37,8 @@ router.get(
   authController.metaCallback
 );
 
+router.get('/me', authenticate, (req: Request, res: Response, next: NextFunction) => 
+  authController.getMe(req as AuthRequest, res, next)
+);
+
 export default router;

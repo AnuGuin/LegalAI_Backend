@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import authService from './auth.service.js';
 import type { AuthRequest } from '../../middleware/auth.middleware.js';
+import prisma from '../../config/database.js';
+import { AppError } from '../../middleware/error.middleware.js';
 
 class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
@@ -89,6 +91,33 @@ class AuthController {
       res.redirect(
         `${frontendUrl}/auth/callback?token=${result.accessToken}&refreshToken=${result.refreshToken}`
       );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMe(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+        },
+      });
+
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      res.status(200).json({
+        success: true,
+        data: user,
+      });
     } catch (error) {
       next(error);
     }
