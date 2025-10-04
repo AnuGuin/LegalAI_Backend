@@ -1,0 +1,175 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  META
+}
+
+enum ChatMode {
+  NORMAL
+  AGENTIC
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String?
+  password      String?       // Null for OAuth users
+  avatar        String?
+  provider      AuthProvider  @default(LOCAL)
+  providerId    String?       // OAuth provider user ID
+  
+  // Profile
+  preferences   Json?         // Store user preferences
+  
+  // Timestamps
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  conversations Conversation[]
+  documents     Document[]
+  translations  Translation[]
+  
+  @@index([email])
+  @@index([providerId])
+}
+
+model Conversation {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  mode          ChatMode      @default(NORMAL)
+  
+  // RAG Document Support
+  documentId    String?       // Python backend document ID for RAG
+  documentName  String?       // Original filename
+  
+  // Metadata
+  language      String?
+  metadata      Json?
+  
+  // Timestamps
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastMessageAt DateTime      @default(now())
+  
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  
+  @@index([userId])
+  @@index([documentId])
+  @@index([createdAt])
+}
+
+model Message {
+  id              String        @id @default(cuid())
+  conversationId  String
+  role            MessageRole
+  content         String        @db.Text
+  
+  // Metadata
+  tokens          Int?          // Token count
+  model           String?       // Model used
+  metadata        Json?         // Additional data (citations, tool calls, etc.)
+  
+  // File attachments
+  attachments     String[]      // Array of file URLs/paths
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model Document {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  content       String        @db.Text
+  format        String        // PDF, DOCX, etc.
+  fileUrl       String?       // S3/storage URL
+  
+  // Generation metadata
+  prompt        String?       @db.Text
+  generatedBy   String?       // Model/service used
+  metadata      Json?
+  
+  // Timestamps
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Translation {
+  id              String        @id @default(cuid())
+  userId          String
+  sourceText      String        @db.Text
+  translatedText  String        @db.Text
+  sourceLang      String
+  targetLang      String
+  
+  // Metadata
+  metadata        Json?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id          String    @id @default(cuid())
+  userId      String
+  token       String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([token])
+}
+
+// Rate limiting (alternative to Redis for simple cases)
+model RateLimit {
+  id          String    @id @default(cuid())
+  identifier  String    // IP or user ID
+  endpoint    String
+  count       Int       @default(1)
+  resetAt     DateTime
+  createdAt   DateTime  @default(now())
+  
+  @@unique([identifier, endpoint])
+  @@index([identifier])
+  @@index([resetAt])
+}
