@@ -29,7 +29,7 @@ router.get(
 // Meta OAuth
 router.get(
   '/meta',
-  passport.authenticate('facebook', { scope: ['email'] })
+  passport.authenticate('facebook', { scope: ['profile','email'] })
 );
 router.get(
   '/meta/callback',

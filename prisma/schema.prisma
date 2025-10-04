@@ -58,25 +58,27 @@ model Conversation {
   title         String
   mode          ChatMode      @default(NORMAL)
   
-  // RAG Document Support
-  documentId    String?       // Python backend document ID for RAG
-  documentName  String?       // Original filename
+  // Document support
+  documentId    String?       // Python backend document_id
+  documentName  String?
   
-  // Metadata
+  sessionId     String?       // Python backend session_id for continuity
+  
+  // Metadata for additional API data
+  metadata      Json?         // Store storageUrl, etc.
+  
   language      String?
-  metadata      Json?
   
-  // Timestamps
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   lastMessageAt DateTime      @default(now())
   
-  // Relations
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages      Message[]
   
   @@index([userId])
   @@index([documentId])
+  @@index([sessionId])
   @@index([createdAt])
 }
 

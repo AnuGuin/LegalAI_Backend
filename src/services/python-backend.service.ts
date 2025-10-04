@@ -1,54 +1,80 @@
-import axios, { type AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
-import type {
-  DocumentGenerationResponse,
-  ChatResponse,
+import {
+  AgentChatRequest,
   AgentChatResponse,
-  RAGChatResponse,
-  TranslationResponse,
-  LanguageDetectionResponse,
+  UploadAndChatResponse,
+  ChatRequest,
+  ChatResponse,
+  TranslateRequest,
+  TranslateResponse,
+  DocGenRequest,
+  DocGenResponse,
 } from '../types/python-backend.types.js';
-
 
 class PythonBackendService {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.PYTHON_BACKEND_URL || 'http://localhost:8000',
-      timeout: parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '30000'),
+      baseURL: process.env.PYTHON_BACKEND_URL,
+      timeout: parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '90000'), // 90s for AI
       headers: {
         'Content-Type': 'application/json',
       },
     });
   }
 
-  async chat(message: string, conversationHistory?: any[]): Promise<ChatResponse> {
-    const response = await this.client.post<ChatResponse>('/api/v1/chat', {
-      message,
-      conversation_history: conversationHistory || [],
-    });
+  /*
+   * Normal Chat - Uses general knowledge chatbot
+   */
+  async chat(prompt: string): Promise<ChatResponse> {
+    const request: ChatRequest = {
+      prompt, 
+    };
+
+    const response = await this.client.post<ChatResponse>('/api/v1/chat', request);
     return response.data;
   }
 
-  async agentChat(message: string, conversationHistory?: any[]): Promise<AgentChatResponse> {
-    const response = await this.client.post<AgentChatResponse>('/api/v1/agent/chat', {
-      message,
-      conversation_history: conversationHistory || [],
-    });
-    return response.data;
-  }
+  /*
+   * Agentic Chat - Uses AI agent with tools
+   */
+  async agentChat(
+      message: string,
+      sessionId?: string,
+      documentId?: string
+    ): Promise<AgentChatResponse> {
+      const request: AgentChatRequest = {
+        message,
+        session_id: sessionId || '',
+        document_id: documentId || '',
+      };
 
-  async agentUploadAndChat(
+      const response = await this.client.post<AgentChatResponse>(
+        '/api/v1/agent/chat',
+        request
+      );
+      return response.data;
+    }
+
+  /*
+   * Upload and Chat 
+   */
+ async agentUploadAndChat(
     file: Buffer,
     fileName: string,
-    message: string
-  ): Promise<AgentChatResponse> {
+    initialMessage: string = 'Please analyze this document',
+    sessionId?: string
+  ): Promise<UploadAndChatResponse> {
     const formData = new FormData();
     formData.append('file', file, fileName);
-    formData.append('message', message);
+    formData.append('initial_message', initialMessage);
+    if (sessionId) {
+      formData.append('session_id', sessionId);
+    }
 
-    const response = await this.client.post<AgentChatResponse>(
+    const response = await this.client.post<UploadAndChatResponse>(
       '/api/v1/agent/upload-and-chat',
       formData,
       {
@@ -58,51 +84,51 @@ class PythonBackendService {
     return response.data;
   }
 
-  async ragChat(
-    message: string,
-    documentId: string,
-    conversationHistory?: any[]
-  ): Promise<RAGChatResponse> {
-    const response = await this.client.post<RAGChatResponse>('/api/v1/chat/rag', {
-      message,
-      document_id: documentId,
-      conversation_history: conversationHistory || [],
+
+  /*
+   * Detect Language
+   */
+  async detectLanguage(text: string): Promise<{ language: string; confidence?: number }> {
+    const response = await this.client.get('/api/v1/agent/detect-language', {
+      params: { text },
     });
     return response.data;
   }
 
-  async detectLanguage(text: string): Promise<LanguageDetectionResponse> {
-    const response = await this.client.post<LanguageDetectionResponse>(
-      '/api/v1/agent/detect-language',
-      { text }
-    );
-    return response.data;
-  }
-
+  /*
+   * Generate Document from Template
+   */
   async generateDocument(
-    prompt: string,
-    format: string = 'pdf'
-  ): Promise<DocumentGenerationResponse> {
-    const response = await this.client.post<DocumentGenerationResponse>(
-      '/api/v1/generate/document',
-      {
-        prompt,
-        format,
-      }
+    templateName: string,
+    data: Record<string, any>
+  ): Promise<DocGenResponse> {
+    const request: DocGenRequest = {
+      template_name: templateName,
+      data,
+    };
+
+    const response = await this.client.post<DocGenResponse>(
+      '/api/v1/generate-document', // CORRECT: with hyphen
+      request
     );
     return response.data;
   }
 
+  /*
+   * Translate Text
+   */
   async translate(
     text: string,
-    sourceLang: string,
-    targetLang: string
-  ): Promise<TranslationResponse> {
-    const response = await this.client.post<TranslationResponse>('/api/v1/translate', {
+    sourceLang: string = 'en',
+    targetLang: string = 'hi'
+  ): Promise<TranslateResponse> {
+    const request: TranslateRequest = {
       text,
       source_lang: sourceLang,
       target_lang: targetLang,
-    });
+    };
+
+    const response = await this.client.post<TranslateResponse>('/api/v1/translate', request);
     return response.data;
   }
 }

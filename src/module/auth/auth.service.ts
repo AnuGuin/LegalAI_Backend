@@ -16,7 +16,6 @@ class AuthService {
       throw new AppError('User already exists', 400);
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user

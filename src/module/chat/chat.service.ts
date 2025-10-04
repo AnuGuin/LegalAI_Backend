@@ -3,7 +3,7 @@ import pythonBackendService from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
 
-// Type for AI response (matching the interfaces from python-backend.service.ts)
+// Type for AI response 
 type AIResponse = {
   response?: string;
   message?: string;
@@ -12,6 +12,7 @@ type AIResponse = {
   metadata?: Record<string, any>;
   sources?: any[];
   document_id?: string;
+  session_id?: string;
 };
 
 class ChatService {
@@ -20,7 +21,8 @@ class ChatService {
     title: string, 
     mode: 'NORMAL' | 'AGENTIC',
     documentId?: string,
-    documentName?: string
+    documentName?: string,
+    sessionId?: string
   ) {
     const conversation = await prisma.conversation.create({
       data: {
@@ -29,6 +31,7 @@ class ChatService {
         mode,
         documentId: documentId || null,
         documentName: documentName || null,
+        sessionId: sessionId || null,
       },
     });
 
@@ -42,7 +45,6 @@ class ChatService {
     mode: 'NORMAL' | 'AGENTIC',
     file?: { buffer: Buffer; fileName: string }
   ) {
-    // Verify conversation belongs to user
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: conversationId,
@@ -60,11 +62,11 @@ class ChatService {
       throw new AppError('Conversation not found', 404);
     }
 
-    // Check cache for similar query (only for non-file queries)
+    // Check cache (only for non-file queries)
     if (!file) {
       const cachedResponse = await cacheService.getAIResponse(message, mode);
       if (cachedResponse) {
-        // Still save to database even if cached
+        //save to database 
         const userMessage = await prisma.message.create({
           data: {
             conversationId,
@@ -95,7 +97,7 @@ class ChatService {
       }
     }
 
-    // Prepare conversation history
+    // History
     const conversationHistory = conversation.messages.map((msg : any) => ({
       role: msg.role.toLowerCase(),
       content: msg.content,
@@ -109,32 +111,62 @@ class ChatService {
       aiResponse = await pythonBackendService.agentUploadAndChat(
         file.buffer,
         file.fileName,
-        message
+        message,
+        conversation.sessionId || undefined
       );
 
-      // Extract document_id from response and save to conversation
+      // Extract document_id and session_id from response and save to conversation
+      const updateData: { documentId?: string; documentName?: string; sessionId?: string } = {};
+      
       if (aiResponse.document_id) {
+        updateData.documentId = aiResponse.document_id;
+        updateData.documentName = file.fileName;
+      }
+      
+      if (aiResponse.session_id) {
+        updateData.sessionId = aiResponse.session_id;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
         await prisma.conversation.update({
           where: { id: conversationId },
-          data: {
-            documentId: aiResponse.document_id,
-            documentName: file.fileName,
-          },
+          data: updateData,
         });
       }
     } else if (conversation.documentId && mode === 'AGENTIC') {
-      // Follow-up query with existing document - use RAG endpoint
-      aiResponse = await pythonBackendService.ragChat(
+      // Follow-up query with existing document - use agent chat with document_id
+      const sessionId = conversation.sessionId;
+      aiResponse = await pythonBackendService.agentChat(
         message,
-        conversation.documentId,
-        conversationHistory
+        sessionId || undefined,
+        conversation.documentId
       );
+      
+      // Update session_id if it changed
+      if (aiResponse.session_id && aiResponse.session_id !== sessionId) {
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { sessionId: aiResponse.session_id },
+        });
+      }
     } else if (mode === 'AGENTIC') {
       // Agentic mode without document
-      aiResponse = await pythonBackendService.agentChat(message, conversationHistory);
+      const sessionId = conversation.sessionId;
+      aiResponse = await pythonBackendService.agentChat(
+        message,
+        sessionId || undefined
+      );
+      
+      // Update session_id if it changed
+      if (aiResponse.session_id && aiResponse.session_id !== sessionId) {
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { sessionId: aiResponse.session_id },
+        });
+      }
     } else {
       // Normal chat mode
-      aiResponse = await pythonBackendService.chat(message, conversationHistory);
+      aiResponse = await pythonBackendService.chat(message);
     }
 
     // Cache the response (only for non-file queries)
@@ -257,6 +289,7 @@ class ChatService {
         mode: true,
         documentId: true,
         documentName: true,
+        sessionId: true,
         createdAt: true,
       },
     });

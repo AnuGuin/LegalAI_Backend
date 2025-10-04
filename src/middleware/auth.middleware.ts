@@ -26,7 +26,6 @@ export interface OptionalAuthRequest extends Request {
 
 /**
  * Middleware to authenticate requests using JWT token
- * Extracts token from Authorization header and verifies it
  */
 export const authenticate = async (
   req: Request,

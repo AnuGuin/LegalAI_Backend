@@ -1,49 +1,68 @@
-export interface DocumentGenerationResponse {
-  // The actual response fields from your Python backend
-  document?: string;
-  file_url?: string;
-  url?: string;
-  download_url?: string;
-  title?: string;
-  content?: string;
-  metadata?: Record<string, any>;
-  success?: boolean;
-  message?: string;
+export interface AgentChatRequest {
+  message: string;
+  document_id?: string;
+  session_id?: string;
+  input_language?: string;
+  output_language?: string;
+}
+
+export interface LanguageInfo {
+  detected_input?: string;
+  detected_output?: string;
+  [key: string]: any;
+}
+
+export interface AgentChatResponse {
+  response: string;
+  session_id: string;          
+  tools_used: string[];
+  intermediate_steps: any[];
+  raw_results: any[];
+  language_info?: {
+  detected_input?: string;
+  detected_output?: string;
+  };
+}
+
+// Upload and Chat Types
+export interface UploadAndChatResponse {
+  document_id: string;           
+  storage_url: string;
+  agent_response: AgentChatResponse;  
+  session_id: string;       
+  tools_used: string[];
+  intermediate_steps: any[];
+  raw_results: any[];
+  language_info?: any;
+  deduplication_info?: any;
+}
+
+// General Chat Types
+export interface ChatRequest {
+  prompt: string; 
 }
 
 export interface ChatResponse {
-  response?: string;
-  message?: string;
-  text?: string;
-  answer?: string;
-  metadata?: Record<string, any>;
-  sources?: any[];
+  response: string;
 }
 
-export interface AgentChatResponse extends ChatResponse {
-  document_id?: string;
+// Translation Types
+export interface TranslateRequest {
+  text: string;
+  source_lang?: string;
+  target_lang?: string;
 }
 
-export interface RAGChatResponse extends ChatResponse {
-  sources?: Array<{
-    page?: number;
-    content?: string;
-    score?: number;
-  }>;
+export interface TranslateResponse {
+  translated_text: string;
 }
 
-export interface TranslationResponse {
-  translated_text?: string;
-  translation?: string;
-  text?: string;
-  source_language?: string;
-  target_language?: string;
-  metadata?: Record<string, any>;
+// Document Generation Types
+export interface DocGenRequest {
+  template_name: string;
+  data: Record<string, any>;
 }
 
-export interface LanguageDetectionResponse {
-  language?: string;
-  detected_language?: string;
-  confidence?: number;
-  metadata?: Record<string, any>;
+export interface DocGenResponse {
+  document_content: string;
 }
