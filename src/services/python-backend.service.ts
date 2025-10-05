@@ -109,10 +109,7 @@ class PythonBackendService {
   async detectLanguage(text: string): Promise<DetectLanguageResponse> {
     const response = await this.client.post<DetectLanguageResponse>(
       '/api/v1/agent/detect-language',
-      null,
-      {
-        params: { text }
-      }
+      { text }
     );
     return response.data;
   }

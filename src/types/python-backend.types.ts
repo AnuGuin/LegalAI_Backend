@@ -57,14 +57,16 @@ export interface TranslateResponse {
   translated_text: string;
 }
 
-// Language Detection Types
+// Language Detection Types (matches Python backend LanguageDetectionRequest/Response)
 export interface DetectLanguageRequest {
-  message: string;
+  text: string;
 }
 
 export interface DetectLanguageResponse {
-  language: string;
+  detected_language?: string;
+  language?: string;
   confidence?: number;
+  [key: string]: any;
 }
 
 // Document Generation Types

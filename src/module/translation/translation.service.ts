@@ -74,8 +74,10 @@ class TranslationService {
     // Call Python backend
     const result: DetectLanguageResponse = await pythonBackend.detectLanguage(text);
     
-    return {
-      language: result.language || 'unknown',
+    const detectedLanguage = result.detected_language || result.language || 'unknown';
+    
+      return {
+      language: detectedLanguage,
       confidence: result.confidence,
     };
   }
