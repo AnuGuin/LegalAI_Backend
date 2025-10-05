@@ -63,10 +63,18 @@ export interface DetectLanguageRequest {
 }
 
 export interface DetectLanguageResponse {
-  detected_language?: string;
-  language?: string;
-  confidence?: number;
-  [key: string]: any;
+  input_detection: {
+    language: string;
+    confidence: number;
+    method: string;
+    supported: boolean;
+    display_name: string;
+    alternatives: any[];
+  };
+  suggested_output: {
+    language: string;
+    display_name: string;
+  };
 }
 
 // Document Generation Types

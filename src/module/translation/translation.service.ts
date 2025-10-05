@@ -13,7 +13,7 @@ interface TranslationResult {
 
 interface LanguageDetectionResult {
   language: string;
-  confidence?: number;
+  display_name: string;
 }
 
 class TranslationService {
@@ -74,11 +74,9 @@ class TranslationService {
     // Call Python backend
     const result: DetectLanguageResponse = await pythonBackend.detectLanguage(text);
     
-    const detectedLanguage = result.detected_language || result.language || 'unknown';
-    
-      return {
-      language: detectedLanguage,
-      confidence: result.confidence,
+    return {
+      language: result.suggested_output.language,
+      display_name: result.suggested_output.display_name,
     };
   }
 
