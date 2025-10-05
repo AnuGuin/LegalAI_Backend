@@ -16,13 +16,29 @@ class PythonBackendService {
   private client: AxiosInstance;
 
   constructor() {
+    
+    // Hugging Face Spaces Wakeup Time
+    const timeout = parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '120000'); // 120s default
+    
     this.client = axios.create({
       baseURL: process.env.PYTHON_BACKEND_URL,
-      timeout: parseInt(process.env.PYTHON_BACKEND_TIMEOUT || '90000'), // 90s for AI
+      timeout: timeout,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    // Response interceptor for better error handling
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.code === 'ECONNABORTED') {
+          console.error('Python backend timeout. The space might be sleeping or overloaded.');
+          error.message = 'The AI service is taking longer than expected. This might be because the service is waking up from sleep. Please try again in a moment.';
+        }
+        throw error;
+      }
+    );
   }
 
   /*

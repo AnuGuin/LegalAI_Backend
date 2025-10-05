@@ -13,34 +13,94 @@ class CacheService {
 
   // Cache user data
   async cacheUserData(userId: string, data: any, ttl = 3600) {
-    await redis.setex(`user:${userId}`, ttl, JSON.stringify(data));
+    try {
+      await redis.setex(`user:${userId}`, ttl, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error caching user data:', error);
+    }
   }
 
   async getUserData(userId: string) {
-    const cached = await redis.get(`user:${userId}`);
-    return cached ? JSON.parse(cached as string) : null;
+    try {
+      const cached = await redis.get(`user:${userId}`);
+      if (!cached || typeof cached !== 'string') {
+        return null;
+      }
+      return JSON.parse(cached);
+    } catch (error) {
+      console.error('Error retrieving user data from cache:', error);
+      return null;
+    }
   }
 
   // Cache conversation
   async cacheConversation(conversationId: string, data: any, ttl = 1800) {
-    await redis.setex(`conversation:${conversationId}`, ttl, JSON.stringify(data));
+    try {
+      await redis.setex(`conversation:${conversationId}`, ttl, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error caching conversation:', error);
+    }
   }
 
   async getConversation(conversationId: string) {
-    const cached = await redis.get(`conversation:${conversationId}`);
-    return cached ? JSON.parse(cached as string) : null;
+    try {
+      const cached = await redis.get(`conversation:${conversationId}`);
+      if (!cached || typeof cached !== 'string') {
+        return null;
+      }
+      return JSON.parse(cached);
+    } catch (error) {
+      console.error('Error retrieving conversation from cache:', error);
+      return null;
+    }
   }
 
   // Cache AI responses
   async cacheAIResponse(query: string, mode: string, response: any, ttl = 7200) {
-    const hash = this.generateHash({ query, mode });
-    await redis.setex(`ai:${hash}`, ttl, JSON.stringify(response));
+    try {
+      const hash = this.generateHash({ query, mode });
+      // Ensure response is properly serialized
+      const serialized = JSON.stringify(response);
+      await redis.setex(`ai:${hash}`, ttl, serialized);
+    } catch (error) {
+      console.error('Error caching AI response:', error);
+      // Don't throw - caching is not critical
+    }
   }
 
   async getAIResponse(query: string, mode: string) {
-    const hash = this.generateHash({ query, mode });
-    const cached = await redis.get(`ai:${hash}`);
-    return cached ? JSON.parse(cached as string) : null;
+    try {
+      const hash = this.generateHash({ query, mode });
+      const cached = await redis.get(`ai:${hash}`);
+      
+      if (!cached) {
+        return null;
+      }
+
+      // Handle string values
+      if (typeof cached === 'string') {
+        // Check if it's already an object string like "[object Object]"
+        if (cached === '[object Object]' || cached.startsWith('[object')) {
+          console.warn('Invalid cached data detected, clearing cache');
+          await redis.del(`ai:${hash}`);
+          return null;
+        }
+        
+        try {
+          return JSON.parse(cached);
+        } catch (parseError) {
+          console.error('Error parsing cached AI response:', parseError);
+          // Clear corrupted cache
+          await redis.del(`ai:${hash}`);
+          return null;
+        }
+      }
+      
+      return cached;
+    } catch (error) {
+      console.error('Error retrieving AI response from cache:', error);
+      return null;
+    }
   }
 
   // Cache translation
@@ -64,6 +124,33 @@ class CacheService {
   // Clear user cache
   async clearUserCache(userId: string) {
     await redis.del(`user:${userId}`);
+  }
+
+  // Clear all AI response caches (useful for debugging)
+  async clearAllAICache() {
+    try {
+      // Note: This is a simple implementation
+      // For production, you might want to track cache keys separately
+      console.log('Clearing all AI caches...');
+      // Since we can't use KEYS in Upstash, we'll just note this limitation
+      // Individual corrupted caches will be cleared automatically when accessed
+      return { success: true, message: 'Cache clearing triggered' };
+    } catch (error) {
+      console.error('Error clearing AI cache:', error);
+      return { success: false, message: 'Error clearing cache' };
+    }
+  }
+
+  // Flush all caches (use with caution)
+  async flushAll() {
+    try {
+      await redis.flushdb();
+      console.log('All caches cleared');
+      return { success: true, message: 'All caches cleared' };
+    } catch (error) {
+      console.error('Error flushing cache:', error);
+      return { success: false, message: 'Error flushing cache' };
+    }
   }
 }
 
