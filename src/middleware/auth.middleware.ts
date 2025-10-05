@@ -24,14 +24,10 @@ export interface OptionalAuthRequest extends Request {
   };
 }
 
-/**
+/*
  * Middleware to authenticate requests using JWT token
  */
-export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const authenticate = async ( req: Request, res: Response, next: NextFunction) => {
   try {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;
@@ -110,7 +106,7 @@ export const authenticate = async (
     // Attach user to request object
     (req as AuthRequest).user = user;
 
-    // Log successful authentication (optional, for debugging)
+    // Log successful authentication (for debugging)
     if (process.env.NODE_ENV === 'development') {
       logger.debug('User authenticated', {
         userId: user.id,
@@ -135,11 +131,7 @@ export const authenticate = async (
  * Optional authentication middleware
  * Attaches user to request if token is valid, but doesn't fail if missing
  */
-export const optionalAuth = async (
-  req: OptionalAuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const optionalAuth = async ( req: OptionalAuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     

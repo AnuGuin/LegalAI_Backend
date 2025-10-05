@@ -2,18 +2,75 @@ import prisma from '../../config/database.js';
 import pythonBackendService from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
+import { 
+  AgentChatResponse, 
+  UploadAndChatResponse, 
+  ChatResponse 
+} from '../../types/python-backend.types.js';
 
-// Type for AI response 
-type AIResponse = {
-  response?: string;
-  message?: string;
-  text?: string;
-  answer?: string;
-  metadata?: Record<string, any>;
-  sources?: any[];
-  document_id?: string;
-  session_id?: string;
-};
+// Union type for all possible AI response types
+// NORMAL mode: ChatResponse (simple response)
+// AGENTIC mode: 
+//   - AgentChatResponse (with session_id only document_id is optional)
+//   - UploadAndChatResponse (with both document_id and session_id when uploading a document)
+type AIResponse = AgentChatResponse | UploadAndChatResponse | ChatResponse;
+
+// Type guards for agentic mode responses
+function isUploadAndChatResponse(response: AIResponse): response is UploadAndChatResponse {
+  return 'document_id' in response && 'agent_response' in response;
+}
+
+function isAgentChatResponse(response: AIResponse): response is AgentChatResponse {
+  return 'session_id' in response && !('document_id' in response);
+}
+
+// Helper functions to extract data from different response types
+function getResponseText(response: AIResponse): string {
+  if (isUploadAndChatResponse(response)) {
+    return response.agent_response.response;
+  } else if (isAgentChatResponse(response)) {
+    return response.response;
+  } else {
+    return response.response;
+  }
+}
+
+function getSessionId(response: AIResponse): string | undefined {
+  if (isUploadAndChatResponse(response)) {
+    return response.session_id;
+  } else if (isAgentChatResponse(response)) {
+    return response.session_id;
+  }
+  return undefined;
+}
+
+function getDocumentId(response: AIResponse): string | undefined {
+  if (isUploadAndChatResponse(response)) {
+    return response.document_id;
+  }
+  return undefined;
+}
+
+function getMetadata(response: AIResponse): Record<string, any> {
+  if (isUploadAndChatResponse(response)) {
+    return {
+      tools_used: response.tools_used,
+      intermediate_steps: response.intermediate_steps,
+      raw_results: response.raw_results,
+      language_info: response.language_info,
+      deduplication_info: response.deduplication_info,
+      storage_url: response.storage_url,
+    };
+  } else if (isAgentChatResponse(response)) {
+    return {
+      tools_used: response.tools_used,
+      intermediate_steps: response.intermediate_steps,
+      raw_results: response.raw_results,
+      language_info: response.language_info,
+    };
+  }
+  return {};
+}
 
 class ChatService {
   async createConversation(
@@ -79,7 +136,7 @@ class ChatService {
           data: {
             conversationId,
             role: 'ASSISTANT',
-            content: cachedResponse.response || cachedResponse.message || cachedResponse.text,
+            content: getResponseText(cachedResponse),
             metadata: { cached: true },
           },
         });
@@ -118,13 +175,15 @@ class ChatService {
       // Extract document_id and session_id from response and save to conversation
       const updateData: { documentId?: string; documentName?: string; sessionId?: string } = {};
       
-      if (aiResponse.document_id) {
-        updateData.documentId = aiResponse.document_id;
+      const docId = getDocumentId(aiResponse);
+      if (docId) {
+        updateData.documentId = docId;
         updateData.documentName = file.fileName;
       }
       
-      if (aiResponse.session_id) {
-        updateData.sessionId = aiResponse.session_id;
+      const newSessionId = getSessionId(aiResponse);
+      if (newSessionId) {
+        updateData.sessionId = newSessionId;
       }
       
       if (Object.keys(updateData).length > 0) {
@@ -142,11 +201,12 @@ class ChatService {
         conversation.documentId
       );
       
-      // Update session_id if it changed
-      if (aiResponse.session_id && aiResponse.session_id !== sessionId) {
+      // Update session_id if changed
+      const newSessionId = getSessionId(aiResponse);
+      if (newSessionId && newSessionId !== sessionId) {
         await prisma.conversation.update({
           where: { id: conversationId },
-          data: { sessionId: aiResponse.session_id },
+          data: { sessionId: newSessionId },
         });
       }
     } else if (mode === 'AGENTIC') {
@@ -158,10 +218,11 @@ class ChatService {
       );
       
       // Update session_id if it changed
-      if (aiResponse.session_id && aiResponse.session_id !== sessionId) {
+      const newSessionId = getSessionId(aiResponse);
+      if (newSessionId && newSessionId !== sessionId) {
         await prisma.conversation.update({
           where: { id: conversationId },
-          data: { sessionId: aiResponse.session_id },
+          data: { sessionId: newSessionId },
         });
       }
     } else {
@@ -189,11 +250,10 @@ class ChatService {
       data: {
         conversationId,
         role: 'ASSISTANT',
-        content: aiResponse.response || aiResponse.message || aiResponse.text || aiResponse.answer || 'No response received',
+        content: getResponseText(aiResponse),
         metadata: {
-          ...aiResponse.metadata,
-          document_id: conversation.documentId || aiResponse.document_id,
-          sources: aiResponse.sources,
+          ...getMetadata(aiResponse),
+          document_id: conversation.documentId || getDocumentId(aiResponse),
         },
       },
     });

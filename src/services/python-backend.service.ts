@@ -38,7 +38,7 @@ class PythonBackendService {
   }
 
   /*
-   * Agentic Chat - Uses AI agent with tools
+   * Agentic Chat - Uses AI agent
    */
   async agentChat(
       message: string,
