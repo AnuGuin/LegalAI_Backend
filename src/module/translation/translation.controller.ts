@@ -26,7 +26,15 @@ class TranslationController {
 
   async detectLanguage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { text } = req.body;
+      const { text } = req.body; 
+
+      // Validate input
+      if (!text) {
+        return res.status(400).json({
+          success: false,
+          message: 'Text is required',
+        });
+      }
 
       const result = await translationService.detectLanguage(text);
 

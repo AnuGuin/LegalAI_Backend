@@ -57,6 +57,16 @@ export interface TranslateResponse {
   translated_text: string;
 }
 
+// Language Detection Types
+export interface DetectLanguageRequest {
+  message: string;
+}
+
+export interface DetectLanguageResponse {
+  language: string;
+  confidence?: number;
+}
+
 // Document Generation Types
 export interface DocGenRequest {
   template_name: string;

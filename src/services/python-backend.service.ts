@@ -8,6 +8,8 @@ import {
   ChatResponse,
   TranslateRequest,
   TranslateResponse,
+  DetectLanguageRequest,
+  DetectLanguageResponse,
   DocGenRequest,
   DocGenResponse,
 } from '../types/python-backend.types.js';
@@ -104,10 +106,14 @@ class PythonBackendService {
   /*
    * Detect Language
    */
-  async detectLanguage(text: string): Promise<{ language: string; confidence?: number }> {
-    const response = await this.client.get('/api/v1/agent/detect-language', {
-      params: { text },
-    });
+  async detectLanguage(text: string): Promise<DetectLanguageResponse> {
+    const response = await this.client.post<DetectLanguageResponse>(
+      '/api/v1/agent/detect-language',
+      null,
+      {
+        params: { text }
+      }
+    );
     return response.data;
   }
 

@@ -1,7 +1,7 @@
 import prisma from '../../config/database.js';
 import pythonBackend from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
-import { TranslateResponse } from '../../types/python-backend.types.js';
+import { TranslateResponse, DetectLanguageResponse } from '../../types/python-backend.types.js';
 
 interface TranslationResult {
   sourceText: string;
@@ -66,7 +66,13 @@ class TranslationService {
   }
 
   async detectLanguage(text: string): Promise<LanguageDetectionResult> {
-    const result = await pythonBackend.detectLanguage(text);
+    // Validate input
+    if (!text || text.trim().length === 0) {
+      throw new Error('Text is required for language detection');
+    }
+
+    // Call Python backend
+    const result: DetectLanguageResponse = await pythonBackend.detectLanguage(text);
     
     return {
       language: result.language || 'unknown',
