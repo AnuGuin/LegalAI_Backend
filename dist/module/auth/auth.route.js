@@ -12,7 +12,8 @@ router.post('/logout', authenticate, (req, res, next) => authController.logout(r
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { session: false }), authController.googleCallback);
 // Meta OAuth
-router.get('/meta', passport.authenticate('facebook', { scope: ['email'] }));
+router.get('/meta', passport.authenticate('facebook', { scope: ['profile', 'email'] }));
 router.get('/meta/callback', passport.authenticate('facebook', { session: false }), authController.metaCallback);
+router.get('/me', authenticate, (req, res, next) => authController.getMe(req, res, next));
 export default router;
 //# sourceMappingURL=auth.route.js.map

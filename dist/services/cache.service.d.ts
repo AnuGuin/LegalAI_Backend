@@ -10,6 +10,14 @@ declare class CacheService {
     getTranslation(text: string, sourceLang: string, targetLang: string): Promise<unknown>;
     invalidate(pattern: string): Promise<void>;
     clearUserCache(userId: string): Promise<void>;
+    clearAllAICache(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    flushAll(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }
 declare const _default: CacheService;
 export default _default;

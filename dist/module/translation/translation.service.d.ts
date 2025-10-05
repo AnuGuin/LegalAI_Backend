@@ -1,16 +1,17 @@
+interface TranslationResult {
+    sourceText: string;
+    translatedText: string;
+    sourceLang: string;
+    targetLang: string;
+    cached: boolean;
+}
+interface LanguageDetectionResult {
+    language: string;
+    display_name: string;
+}
 declare class TranslationService {
-    translate(userId: string, text: string, sourceLang: string, targetLang: string): Promise<{
-        sourceText: string;
-        translatedText: {};
-        sourceLang: string;
-        targetLang: string;
-        cached: boolean;
-    }>;
-    detectLanguage(text: string): Promise<{
-        language: string;
-        confidence: number | undefined;
-        metadata: Record<string, any> | undefined;
-    }>;
+    translate(userId: string, text: string, sourceLang: string, targetLang: string): Promise<TranslationResult>;
+    detectLanguage(text: string): Promise<LanguageDetectionResult>;
     getUserTranslations(userId: string): Promise<{
         id: string;
         createdAt: Date;

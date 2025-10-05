@@ -7,6 +7,7 @@ declare class AuthController {
     logout(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
     googleCallback(req: Request, res: Response, next: NextFunction): Promise<void>;
     metaCallback(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getMe(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
 }
 declare const _default: AuthController;
 export default _default;

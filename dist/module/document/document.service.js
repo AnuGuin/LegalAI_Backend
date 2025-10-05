@@ -4,23 +4,28 @@ import { AppError } from '../../middleware/error.middleware.js';
 class DocumentService {
     async generateDocument(userId, prompt, format = 'pdf') {
         // Call Python backend to generate document
-        const result = await pythonBackend.generateDocument(prompt, format);
+        const templateData = {
+            prompt: prompt,
+            format: format,
+            user_instructions: prompt
+        };
+        const result = await pythonBackend.generateDocument('default', templateData);
         // Save document metadata to database
         const document = await prisma.document.create({
             data: {
                 userId,
-                title: result.title || `Document ${new Date().toISOString()}`,
-                content: result.content || '',
+                title: `Document ${new Date().toISOString()}`,
+                content: result.document_content || '',
                 format,
-                fileUrl: result.file_url || result.url || result.download_url || result.document || '',
+                fileUrl: '', // File URL would need to be handled by the Python backend
                 prompt,
                 generatedBy: 'legal-ai-python-backend',
-                metadata: result.metadata || {},
+                metadata: { generated_content: result.document_content },
             },
         });
         return {
             document,
-            downloadUrl: result.file_url || result.url || result.download_url || result.document || '',
+            downloadUrl: '', // This would be provided by the Python backend
         };
     }
     async getUserDocuments(userId) {

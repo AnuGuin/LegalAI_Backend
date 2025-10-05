@@ -40,11 +40,14 @@ router.use(authenticate as RequestHandler);
  * - AGENTIC: AI agent with tools, session tracking, and optional document context
  */
 
-// Create a new conversation (body: { title, mode, documentId?, documentName?, sessionId? })
+// Create a new conversation (body: { mode (required), title?, documentId?, documentName?, sessionId? })
 router.post('/conversations', chatController.createConversation as RequestHandler);
 
 // Get all conversations for the authenticated user
 router.get('/conversations', chatController.getConversations as RequestHandler);
+
+// Delete all conversations for the authenticated user
+router.delete('/conversations', chatController.deleteAllConversations as RequestHandler);
 
 // Get all messages in a conversation
 router.get('/conversations/:conversationId', chatController.getConversationMessages as RequestHandler);

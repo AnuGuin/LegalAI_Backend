@@ -18,10 +18,6 @@ export interface OptionalAuthRequest extends Request {
         provider: string;
     };
 }
-/**
- * Middleware to authenticate requests using JWT token
- * Extracts token from Authorization header and verifies it
- */
 export declare const authenticate: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
 /**
  * Optional authentication middleware

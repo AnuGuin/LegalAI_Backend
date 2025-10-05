@@ -17,7 +17,6 @@ export class AppError extends Error {
 }
 /**
  * Global error handler middleware
- * Catches all errors and sends appropriate response
  */
 export const errorHandler = (err, req, res, next) => {
     // Log error

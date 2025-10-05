@@ -1,9 +1,8 @@
 import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { logger } from '../utils/logger.js';
-/**
+/*
  * Middleware to authenticate requests using JWT token
- * Extracts token from Authorization header and verifies it
  */
 export const authenticate = async (req, res, next) => {
     try {
@@ -74,7 +73,7 @@ export const authenticate = async (req, res, next) => {
         }
         // Attach user to request object
         req.user = user;
-        // Log successful authentication (optional, for debugging)
+        // Log successful authentication (for debugging)
         if (process.env.NODE_ENV === 'development') {
             logger.debug('User authenticated', {
                 userId: user.id,

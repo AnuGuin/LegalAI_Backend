@@ -5,7 +5,7 @@ class TranslationService {
     async translate(userId, text, sourceLang, targetLang) {
         // Check cache first
         const cached = await cacheService.getTranslation(text, sourceLang, targetLang);
-        if (cached) {
+        if (cached && typeof cached === 'string') {
             return {
                 sourceText: text,
                 translatedText: cached,
@@ -16,11 +16,8 @@ class TranslationService {
         }
         // Call Python backend
         const result = await pythonBackend.translate(text, sourceLang, targetLang);
-        // Extract translated text with fallbacks
-        const translatedText = result.translated_text ||
-            result.translation ||
-            result.text ||
-            '';
+        // Extract translated text
+        const translatedText = result.translated_text || '';
         if (!translatedText) {
             throw new Error('Translation failed: No translated text returned');
         }
@@ -32,7 +29,7 @@ class TranslationService {
                 translatedText,
                 sourceLang,
                 targetLang,
-                metadata: result.metadata || {},
+                metadata: {},
             },
         });
         // Cache the translation
@@ -46,11 +43,15 @@ class TranslationService {
         };
     }
     async detectLanguage(text) {
+        // Validate input
+        if (!text || text.trim().length === 0) {
+            throw new Error('Text is required for language detection');
+        }
+        // Call Python backend
         const result = await pythonBackend.detectLanguage(text);
         return {
-            language: result.language || result.detected_language || 'unknown',
-            confidence: result.confidence,
-            metadata: result.metadata,
+            language: result.suggested_output.language,
+            display_name: result.suggested_output.display_name,
         };
     }
     async getUserTranslations(userId) {

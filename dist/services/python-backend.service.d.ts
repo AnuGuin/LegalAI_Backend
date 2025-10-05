@@ -1,14 +1,13 @@
-import type { DocumentGenerationResponse, ChatResponse, AgentChatResponse, RAGChatResponse, TranslationResponse, LanguageDetectionResponse } from '../types/python-backend.types.js';
+import { AgentChatResponse, UploadAndChatResponse, ChatResponse, TranslateResponse, DetectLanguageResponse, DocGenResponse } from '../types/python-backend.types.js';
 declare class PythonBackendService {
     private client;
     constructor();
-    chat(message: string, conversationHistory?: any[]): Promise<ChatResponse>;
-    agentChat(message: string, conversationHistory?: any[]): Promise<AgentChatResponse>;
-    agentUploadAndChat(file: Buffer, fileName: string, message: string): Promise<AgentChatResponse>;
-    ragChat(message: string, documentId: string, conversationHistory?: any[]): Promise<RAGChatResponse>;
-    detectLanguage(text: string): Promise<LanguageDetectionResponse>;
-    generateDocument(prompt: string, format?: string): Promise<DocumentGenerationResponse>;
-    translate(text: string, sourceLang: string, targetLang: string): Promise<TranslationResponse>;
+    chat(prompt: string): Promise<ChatResponse>;
+    agentChat(message: string, sessionId?: string, documentId?: string): Promise<AgentChatResponse>;
+    agentUploadAndChat(file: Buffer, fileName: string, initialMessage?: string, sessionId?: string, inputLanguage?: string, outputLanguage?: string): Promise<UploadAndChatResponse>;
+    detectLanguage(text: string): Promise<DetectLanguageResponse>;
+    generateDocument(templateName: string, data: Record<string, any>): Promise<DocGenResponse>;
+    translate(text: string, sourceLang?: string, targetLang?: string): Promise<TranslateResponse>;
 }
 declare const _default: PythonBackendService;
 export default _default;

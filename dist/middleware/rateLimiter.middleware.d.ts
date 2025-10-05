@@ -15,7 +15,7 @@ export declare const authLimiter: import("express-rate-limit").RateLimitRequestH
 export declare const uploadLimiter: import("express-rate-limit").RateLimitRequestHandler;
 /**
  * Rate limiter for message sending
- * 30 messages per minute per user
+ * 20 messages per minute per user
  */
 export declare const messageLimiter: import("express-rate-limit").RateLimitRequestHandler;
 //# sourceMappingURL=rateLimiter.middleware.d.ts.map

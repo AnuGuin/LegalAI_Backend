@@ -8,7 +8,6 @@ import {
   ChatResponse,
   TranslateRequest,
   TranslateResponse,
-  DetectLanguageRequest,
   DetectLanguageResponse,
   DocGenRequest,
   DocGenResponse,
@@ -78,18 +77,27 @@ class PythonBackendService {
 
   /*
    * Upload and Chat 
+   * Enhanced to support all Python backend parameters including language detection
    */
  async agentUploadAndChat(
     file: Buffer,
     fileName: string,
     initialMessage: string = 'Please analyze this document',
-    sessionId?: string
+    sessionId?: string,
+    inputLanguage?: string,
+    outputLanguage?: string
   ): Promise<UploadAndChatResponse> {
     const formData = new FormData();
     formData.append('file', file, fileName);
     formData.append('initial_message', initialMessage);
     if (sessionId) {
       formData.append('session_id', sessionId);
+    }
+    if (inputLanguage) {
+      formData.append('input_language', inputLanguage);
+    }
+    if (outputLanguage) {
+      formData.append('output_language', outputLanguage);
     }
 
     const response = await this.client.post<UploadAndChatResponse>(

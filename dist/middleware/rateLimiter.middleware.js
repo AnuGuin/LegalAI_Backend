@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
     },
     standardHeaders: true, // Return rate limit info in headers
     legacyHeaders: false,
-    // Note: Trust proxy should be configured at Express app level with app.set('trust proxy', true)
+    // Note: Trust proxy should be configured at Express app level with app.set('trust proxy', true)(For my understanding)
     handler: (req, res) => {
         const retryAfter = req.rateLimit?.resetTime
             ? Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000)
@@ -78,11 +78,11 @@ export const uploadLimiter = rateLimit({
 });
 /**
  * Rate limiter for message sending
- * 30 messages per minute per user
+ * 20 messages per minute per user
  */
 export const messageLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 30,
+    max: 20,
     skipFailedRequests: true,
     message: {
         success: false,

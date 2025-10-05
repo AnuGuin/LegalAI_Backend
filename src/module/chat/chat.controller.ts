@@ -20,9 +20,20 @@ class ChatController {
       const userId = req.user!.id;
       const { title, mode, documentId, documentName, sessionId } = req.body;
 
+      // Validation
+      if (!mode || !['NORMAL', 'AGENTIC'].includes(mode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mode is required and must be either NORMAL or AGENTIC',
+        });
+      }
+
+      // Use provided title or generate a default one
+      const conversationTitle = title || `${mode} Chat - ${new Date().toLocaleString()}`;
+
       const conversation = await chatService.createConversation(
         userId, 
-        title, 
+        conversationTitle, 
         mode,
         documentId,
         documentName,
@@ -61,6 +72,8 @@ class ChatController {
       // Handle both JSON and form-data
       const message = req.body?.message;
       const mode = req.body?.mode;
+      const inputLanguage = req.body?.input_language;
+      const outputLanguage = req.body?.output_language;
       
       // Validation
       if (!conversationId) {
@@ -93,7 +106,9 @@ class ChatController {
         conversationId,
         message,
         mode,
-        file
+        file,
+        inputLanguage,
+        outputLanguage
       );
 
       res.status(200).json({
@@ -186,6 +201,22 @@ class ChatController {
       res.status(200).json({
         success: true,
         message: 'Conversation deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteAllConversations(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+
+      const result = await chatService.deleteAllConversations(userId);
+
+      res.status(200).json({
+        success: true,
+        message: `${result.deletedCount} conversation(s) deleted successfully`,
+        data: result,
       });
     } catch (error) {
       next(error);

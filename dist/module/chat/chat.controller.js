@@ -1,10 +1,24 @@
 import chatService from './chat.service.js';
 class ChatController {
+    /**
+     * Create a new conversation
+     * - NORMAL mode: Simple chat, no session_id or document required
+     * - AGENTIC mode: AI agent with tools, uses session_id, document is optional
+     */
     async createConversation(req, res, next) {
         try {
             const userId = req.user.id;
-            const { title, mode, documentId, documentName } = req.body;
-            const conversation = await chatService.createConversation(userId, title, mode, documentId, documentName);
+            const { title, mode, documentId, documentName, sessionId } = req.body;
+            // Validation
+            if (!mode || !['NORMAL', 'AGENTIC'].includes(mode)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mode is required and must be either NORMAL or AGENTIC',
+                });
+            }
+            // Use provided title or generate a default one
+            const conversationTitle = title || `${mode} Chat - ${new Date().toLocaleString()}`;
+            const conversation = await chatService.createConversation(userId, conversationTitle, mode, documentId, documentName, sessionId);
             res.status(201).json({
                 success: true,
                 data: conversation,
@@ -14,21 +28,53 @@ class ChatController {
             next(error);
         }
     }
+    /**
+     * Send a message in a conversation
+     * - NORMAL mode: Simple chat response
+     * - AGENTIC mode: AI agent with tools, maintains session_id, can include document for context
+     * - File upload: Supported in AGENTIC mode for document analysis
+     *
+     * Request format:
+     * - Content-Type: multipart/form-data (when sending file)
+     * - Content-Type: application/json (when no file)
+     *
+     * Body fields:
+     * - message: string (required)
+     * - mode: 'NORMAL' | 'AGENTIC' (required)
+     * - file: File (optional, for AGENTIC mode)
+     */
     async sendMessage(req, res, next) {
         try {
             const userId = req.user.id;
             const { conversationId } = req.params;
-            const { message, mode } = req.body;
+            // Handle both JSON and form-data
+            const message = req.body?.message;
+            const mode = req.body?.mode;
+            const inputLanguage = req.body?.input_language;
+            const outputLanguage = req.body?.output_language;
+            // Validation
             if (!conversationId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Conversation ID is required',
                 });
             }
+            if (!message) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Message is required',
+                });
+            }
+            if (!mode || !['NORMAL', 'AGENTIC'].includes(mode)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mode is required and must be either NORMAL or AGENTIC',
+                });
+            }
             const file = req.file
                 ? { buffer: req.file.buffer, fileName: req.file.originalname }
                 : undefined;
-            const result = await chatService.sendMessage(userId, conversationId, message, mode, file);
+            const result = await chatService.sendMessage(userId, conversationId, message, mode, file, inputLanguage, outputLanguage);
             res.status(200).json({
                 success: true,
                 data: result,
@@ -105,6 +151,20 @@ class ChatController {
             res.status(200).json({
                 success: true,
                 message: 'Conversation deleted successfully',
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async deleteAllConversations(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const result = await chatService.deleteAllConversations(userId);
+            res.status(200).json({
+                success: true,
+                message: `${result.deletedCount} conversation(s) deleted successfully`,
+                data: result,
             });
         }
         catch (error) {
