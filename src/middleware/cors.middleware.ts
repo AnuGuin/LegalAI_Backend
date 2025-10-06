@@ -9,7 +9,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
 
-  'https://your-app.vercel.app',
+  'https://legal-ai-five-blue.vercel.app',
 ];
 
 export const corsOptions: cors.CorsOptions = {
