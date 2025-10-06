@@ -220,14 +220,11 @@ class ChatService {
     outputLanguage?: string
   ) {
     const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId,
-      },
+      where: { id: conversationId, userId },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
-          take: 20, // Last 20 messages for context
+          take: 20,
         },
       },
     });
@@ -240,7 +237,7 @@ class ChatService {
     if (!file) {
       const cachedResponse = await cacheService.getAIResponse(message, mode);
       if (cachedResponse) {
-        //save to database 
+        // Save user message
         const userMessage = await prisma.message.create({
           data: {
             conversationId,
@@ -266,14 +263,9 @@ class ChatService {
           data: { lastMessageAt: new Date() },
         });
 
+        // IMPORTANT: Return the assistant message in the expected format
         return {
-          message: {
-            id: assistantMessage.id,
-            content: assistantMessage.content,
-            role: 'ASSISTANT',
-            createdAt: assistantMessage.createdAt,
-            metadata: getSimplifiedMetadata(cachedResponse)
-          },
+          message: assistantMessage,
           conversation: {
             id: conversationId,
             sessionId: getSessionId(cachedResponse),
@@ -283,17 +275,10 @@ class ChatService {
       }
     }
 
-    // History
-    const conversationHistory = conversation.messages.map((msg : any) => ({
-      role: msg.role.toLowerCase(),
-      content: msg.content,
-    }));
-
     let aiResponse: AIResponse;
 
-    // Handle different scenarios
+    // Handle different scenarios based on mode and file
     if (file && mode === 'AGENTIC') {
-      // First time upload - use upload-and-chat endpoint
       aiResponse = await pythonBackendService.agentUploadAndChat(
         file.buffer,
         file.fileName,
@@ -303,7 +288,6 @@ class ChatService {
         outputLanguage
       );
 
-      // Extract document_id and session_id from response and save to conversation
       const updateData: { documentId?: string; documentName?: string; sessionId?: string } = {};
       
       const docId = getDocumentId(aiResponse);
@@ -324,7 +308,6 @@ class ChatService {
         });
       }
     } else if (conversation.documentId && mode === 'AGENTIC') {
-      // Follow-up query with existing document - use agent chat with document_id
       const sessionId = conversation.sessionId;
       aiResponse = await pythonBackendService.agentChat(
         message,
@@ -332,7 +315,6 @@ class ChatService {
         conversation.documentId
       );
       
-      // Update session_id if changed
       const newSessionId = getSessionId(aiResponse);
       if (newSessionId && newSessionId !== sessionId) {
         await prisma.conversation.update({
@@ -341,14 +323,12 @@ class ChatService {
         });
       }
     } else if (mode === 'AGENTIC') {
-      // Agentic mode without document
       const sessionId = conversation.sessionId;
       aiResponse = await pythonBackendService.agentChat(
         message,
         sessionId || undefined
       );
       
-      // Update session_id if it changed
       const newSessionId = getSessionId(aiResponse);
       if (newSessionId && newSessionId !== sessionId) {
         await prisma.conversation.update({
@@ -361,7 +341,7 @@ class ChatService {
       aiResponse = await pythonBackendService.chat(message);
     }
 
-    // Cache the response (only for non-file queries)
+    // Cache the response
     if (!file) {
       await cacheService.cacheAIResponse(message, mode, aiResponse);
     }
@@ -376,12 +356,11 @@ class ChatService {
       },
     });
 
-    // Save AI response
+    // Extract and validate response text
     const responseText = getResponseText(aiResponse);
-    
-    // Ensure we have content - fallback to a default message if extraction fails
     const messageContent = responseText || 'AI response received but content could not be extracted.';
     
+    // Save assistant message
     const assistantMessage = await prisma.message.create({
       data: {
         conversationId,
@@ -400,18 +379,12 @@ class ChatService {
       data: { lastMessageAt: new Date() },
     });
 
-    // Invalidate conversation cache
+    // Clear cache
     await cacheService.clearUserCache(userId);
 
-    // Return simplified response structure
+    // CRITICAL: Return the assistant message, not the user message
     return {
-      message: {
-        id: assistantMessage.id,
-        content: assistantMessage.content,
-        role: 'ASSISTANT',
-        createdAt: assistantMessage.createdAt,
-        metadata: getSimplifiedMetadata(aiResponse)
-      },
+      message: assistantMessage, // ← This should be the assistant's response
       conversation: {
         id: conversationId,
         sessionId: getSessionId(aiResponse),
