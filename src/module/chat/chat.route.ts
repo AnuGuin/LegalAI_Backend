@@ -30,7 +30,16 @@ const upload = multer({
   }
 });
 
-// All routes require authentication
+/**
+ * Public Routes (no authentication required)
+ */
+// Get shared conversation by secure link
+router.get('/shared/:shareLink', chatController.getSharedConversation as RequestHandler);
+
+/**
+ * Protected Routes (authentication required)
+ */
+// All routes below require authentication
 router.use(authenticate as RequestHandler);
 
 /**
@@ -61,6 +70,9 @@ router.post(
   upload.single('file'),
   chatController.sendMessage as RequestHandler
 );
+
+// Share or unshare a conversation (body: { share: boolean })
+router.post('/conversations/:conversationId/share', chatController.shareConversation as RequestHandler);
 
 // Delete a conversation
 router.delete('/conversations/:conversationId', chatController.deleteConversation as RequestHandler);

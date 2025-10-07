@@ -3,6 +3,7 @@ import type { NextFunction } from 'express';
 import type { AuthRequest } from '../../middleware/auth.middleware.js';
 import chatService from './chat.service.js';
 import type { Multer } from 'multer';
+import { z } from 'zod';
 
 // Extend AuthRequest to include file property for multer
 interface AuthRequestWithFile extends AuthRequest {
@@ -216,6 +217,82 @@ class ChatController {
       res.status(200).json({
         success: true,
         message: `${result.deletedCount} conversation(s) deleted successfully`,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Share a conversation - creates or manages sharing link
+   */
+  async shareConversation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { conversationId } = req.params;
+
+      // Validation with zod
+      const shareSchema = z.object({
+        share: z.boolean()
+      });
+
+      const parseResult = shareSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'share must be true or false',
+        });
+      }
+
+      const { share } = parseResult.data;
+
+      if (!conversationId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Conversation ID is required',
+        });
+      }
+
+      const result = await chatService.shareConversation(userId, conversationId, share, req);
+
+      if (share) {
+        res.status(200).json({
+          success: true,
+          data: {
+            link: result.link,
+            message: 'Conversation shared successfully',
+          },
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          message: 'Conversation sharing disabled',
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get shared conversation by secure link (no authentication required)
+   */
+  async getSharedConversation(req: AuthRequest | any, res: Response, next: NextFunction) {
+    try {
+      const { shareLink } = req.params;
+
+      if (!shareLink) {
+        return res.status(400).json({
+          success: false,
+          message: 'Share link is required',
+        });
+      }
+
+      const result = await chatService.getSharedConversation(shareLink);
+
+      res.status(200).json({
+        success: true,
         data: result,
       });
     } catch (error) {

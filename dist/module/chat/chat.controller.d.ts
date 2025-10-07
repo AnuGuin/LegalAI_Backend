@@ -32,6 +32,14 @@ declare class ChatController {
     getConversationInfo(req: AuthRequest, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     deleteConversation(req: AuthRequest, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     deleteAllConversations(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * Share a conversation - creates or manages sharing link
+     */
+    shareConversation(req: AuthRequest, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * Get shared conversation by secure link (no authentication required)
+     */
+    getSharedConversation(req: AuthRequest | any, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 }
 declare const _default: ChatController;
 export default _default;

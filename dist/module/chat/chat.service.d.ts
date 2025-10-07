@@ -11,6 +11,7 @@ declare class ChatService {
         sessionId: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         language: string | null;
+        isShared: boolean;
         lastMessageAt: Date;
     }>;
     sendMessage(userId: string, conversationId: string, message: string, mode: 'NORMAL' | 'AGENTIC', file?: {
@@ -19,10 +20,14 @@ declare class ChatService {
     }, inputLanguage?: string, outputLanguage?: string): Promise<{
         message: {
             id: string;
-            content: string;
-            role: string;
             createdAt: Date;
-            metadata: Record<string, any>;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            role: import("@prisma/client").$Enums.MessageRole;
+            content: string;
+            tokens: number | null;
+            model: string | null;
+            attachments: string[];
+            conversationId: string;
         };
         conversation: {
             id: string;
@@ -55,6 +60,7 @@ declare class ChatService {
         sessionId: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         language: string | null;
+        isShared: boolean;
         lastMessageAt: Date;
     }>;
     deleteConversation(userId: string, conversationId: string): Promise<void>;
@@ -69,6 +75,40 @@ declare class ChatService {
         documentId: string | null;
         documentName: string | null;
         sessionId: string | null;
+    }>;
+    /**
+     * Share or unshare a conversation
+     */
+    shareConversation(userId: string, conversationId: string, share: boolean, req: any): Promise<{
+        link: string;
+        message?: undefined;
+    } | {
+        message: string;
+        link?: undefined;
+    }>;
+    /**
+     * Get shared conversation by hash link
+     */
+    getSharedConversation(shareLink: string): Promise<{
+        userName: string;
+        conversation: {
+            id: string;
+            title: string;
+            mode: import("@prisma/client").$Enums.ChatMode;
+            createdAt: Date;
+            messages: {
+                id: string;
+                createdAt: Date;
+                role: import("@prisma/client").$Enums.MessageRole;
+                content: string;
+                attachments: string[];
+            }[];
+        };
+        shareInfo: {
+            viewCount: number;
+            maxViews: number | null;
+            expiresAt: Date | null;
+        };
     }>;
 }
 declare const _default: ChatService;

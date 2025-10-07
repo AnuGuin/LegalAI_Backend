@@ -38,6 +38,9 @@ model User {
   // Profile
   preferences   Json?         // Store user preferences
   
+  // Sharing
+  shareEnabled  Boolean       @default(false) // Enable/disable sharing
+  
   // Timestamps
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -47,6 +50,7 @@ model User {
   conversations Conversation[]
   documents     Document[]
   translations  Translation[]
+  sharedLinks   SharedLink[]
   
   @@index([email])
   @@index([providerId])
@@ -69,12 +73,16 @@ model Conversation {
   
   language      String?
   
+  // Sharing
+  isShared      Boolean       @default(false) // Individual chat sharing
+  
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   lastMessageAt DateTime      @default(now())
   
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages      Message[]
+  sharedLinks   SharedLink[]
   
   @@index([userId])
   @@index([documentId])
@@ -174,4 +182,29 @@ model RateLimit {
   @@unique([identifier, endpoint])
   @@index([identifier])
   @@index([resetAt])
+}
+
+// Shared links for conversations
+model SharedLink {
+  id             String        @id @default(cuid())
+  hashedLink     String        @unique // Random hash for secure sharing
+  userId         String
+  conversationId String?       // Optional: specific conversation
+  
+  // Link configuration
+  expiresAt      DateTime?     // Optional expiration
+  viewCount      Int           @default(0) // Track views
+  maxViews       Int?          // Optional view limit
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([hashedLink])
+  @@index([userId])
+  @@index([conversationId])
+  @@index([expiresAt])
 }

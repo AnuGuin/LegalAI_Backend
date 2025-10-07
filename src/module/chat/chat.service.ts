@@ -2,6 +2,7 @@ import prisma from '../../config/database.js';
 import pythonBackendService from '../../services/python-backend.service.js';
 import cacheService from '../../services/cache.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
+import crypto from 'crypto';
 import { 
   AgentChatResponse, 
   UploadAndChatResponse, 
@@ -384,7 +385,7 @@ class ChatService {
 
     // CRITICAL: Return the assistant message, not the user message
     return {
-      message: assistantMessage, // ← This should be the assistant's response
+      message: assistantMessage, 
       conversation: {
         id: conversationId,
         sessionId: getSessionId(aiResponse),
@@ -494,6 +495,159 @@ class ChatService {
     }
 
     return conversation;
+  }
+
+  /**
+   * Share or unshare a conversation
+   */
+  async shareConversation(userId: string, conversationId: string, share: boolean, req: any) {
+    // Verify conversation exists and belongs to user
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        userId,
+      },
+    });
+
+    if (!conversation) {
+      throw new AppError('Conversation not found', 404);
+    }
+
+    if (share) {
+      // Check if link already exists
+      let existingLink = await prisma.sharedLink.findFirst({
+        where: {
+          userId,
+          conversationId,
+        },
+      });
+
+      if (!existingLink) {
+        // Generate random hash using crypto
+        const hashedLink = crypto.randomBytes(8).toString('hex');
+        
+        existingLink = await prisma.sharedLink.create({
+          data: {
+            hashedLink,
+            userId,
+            conversationId,
+          },
+        });
+      }
+
+      // Update conversation sharing status
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { isShared: true },
+      });
+
+      // Update user sharing enabled status
+      await prisma.user.update({
+        where: { id: userId },
+        data: { shareEnabled: true },
+      });
+
+      return {
+        link: `${req.protocol}://${req.get('host')}/api/v1/chat/shared/${existingLink.hashedLink}`,
+      };
+    } else {
+      // Disable sharing
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { isShared: false },
+      });
+
+      // Delete the shared link
+      await prisma.sharedLink.deleteMany({
+        where: {
+          userId,
+          conversationId,
+        },
+      });
+
+      return { message: 'Sharing disabled' };
+    }
+  }
+
+  /**
+   * Get shared conversation by hash link
+   */
+  async getSharedConversation(shareLink: string) {
+    // Find the shared link
+    const linkDoc = await prisma.sharedLink.findUnique({
+      where: { hashedLink: shareLink },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            shareEnabled: true,
+          },
+        },
+        conversation: {
+          include: {
+            messages: {
+              orderBy: { createdAt: 'asc' },
+              select: {
+                id: true,
+                role: true,
+                content: true,
+                createdAt: true,
+                attachments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!linkDoc) {
+      throw new AppError('Invalid share link', 404);
+    }
+
+    if (!linkDoc.user.shareEnabled) {
+      throw new AppError('Sharing is disabled for this user', 403);
+    }
+
+    if (!linkDoc.conversation) {
+      throw new AppError('Shared conversation not found', 404);
+    }
+
+    if (!linkDoc.conversation.isShared) {
+      throw new AppError('This conversation is no longer shared', 403);
+    }
+
+    // Check if link is expired
+    if (linkDoc.expiresAt && linkDoc.expiresAt < new Date()) {
+      throw new AppError('Share link has expired', 403);
+    }
+
+    // Check view limits
+    if (linkDoc.maxViews && linkDoc.viewCount >= linkDoc.maxViews) {
+      throw new AppError('Share link view limit exceeded', 403);
+    }
+
+    // Increment view count
+    await prisma.sharedLink.update({
+      where: { id: linkDoc.id },
+      data: { viewCount: linkDoc.viewCount + 1 },
+    });
+
+    return {
+      userName: linkDoc.user.name || linkDoc.user.email,
+      conversation: {
+        id: linkDoc.conversation.id,
+        title: linkDoc.conversation.title,
+        mode: linkDoc.conversation.mode,
+        createdAt: linkDoc.conversation.createdAt,
+        messages: linkDoc.conversation.messages,
+      },
+      shareInfo: {
+        viewCount: linkDoc.viewCount + 1,
+        maxViews: linkDoc.maxViews,
+        expiresAt: linkDoc.expiresAt,
+      },
+    };
   }
 }
 
